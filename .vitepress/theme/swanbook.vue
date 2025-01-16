@@ -24,11 +24,27 @@
       </div>
     </header>
 
-    <!-- 主要内容区域 -->
+    <!-- 文章卡片区域 -->
     <main class="swanbook-main container">
-      <!-- 可配置的布局类型 -->
-      <div class="content-wrapper" :class="contentLayoutClass">
-        <Content class="content" />
+      <div class="articles-grid" :class="`columns-${frontmatter.columns || 3}`">
+        <article 
+          v-for="article in articles" 
+          :key="article.url"
+          class="article-card"
+          @click="navigateTo(article.url)"
+        >
+          <div class="article-image">
+            <img :src="article.frontmatter.image" :alt="article.frontmatter.title">
+          </div>
+          <div class="article-content">
+            <h2 class="article-title">{{ article.frontmatter.title }}</h2>
+            <p class="article-description">{{ article.frontmatter.description }}</p>
+            <div class="article-meta">
+              <span class="article-author">{{ article.frontmatter.author }}</span>
+              <time class="article-date">{{ formatDate(article.frontmatter.date) }}</time>
+            </div>
+          </div>
+        </article>
       </div>
     </main>
   </div>
@@ -36,9 +52,36 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useData } from 'vitepress'
+import { useData, useRouter } from 'vitepress'
 
-const { frontmatter } = useData()
+const { frontmatter, theme } = useData()
+const router = useRouter()
+
+// 获取所有博客文章
+const articles = computed(() => {
+  console.log('Theme data:', theme.value) // 添加调试信息
+  const posts = theme.value.posts || []
+  console.log('Posts:', posts) // 添加调试信息
+  return posts.sort((a, b) => {
+    return new Date(b.frontmatter.date) - new Date(a.frontmatter.date)
+  })
+})
+
+// 日期格式化函数
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+// 导航函数
+function navigateTo(url) {
+  if (url) {
+    router.go(url)
+  }
+}
 
 // 计算内容布局类名
 const contentLayoutClass = computed(() => ({
@@ -49,7 +92,7 @@ const contentLayoutClass = computed(() => ({
 
 // 计算头部样式
 const headerStyle = computed(() => ({
-  color: frontmatter.value.headerColor || 'white',
+  color: frontmatter.value.headerColor || 'var(--vp-c-text-1)',
   position: 'relative',
 }))
 
@@ -82,14 +125,14 @@ console.log('Frontmatter:', frontmatter.value) // 添加调试信息
   font-weight: 700;
   margin-bottom: 1.5rem;
   position: relative;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
 }
 
 .swanbook-header .tagline {
   font-size: 1.4rem;
   opacity: 0.9;
   position: relative;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
   max-width: 600px;
   margin: 0 auto;
 }
@@ -170,5 +213,91 @@ console.log('Frontmatter:', frontmatter.value) // 添加调试信息
 .content :deep(.vp-doc) {
   padding: 0;
   background: transparent;
+}
+
+/* 文章网格布局 */
+.articles-grid {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+/* 列数配置 */
+.columns-1 { grid-template-columns: 1fr; }
+.columns-2 { grid-template-columns: repeat(2, 1fr); }
+.columns-3 { grid-template-columns: repeat(3, 1fr); }
+.columns-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .articles-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 文章卡片样式 */
+.article-card {
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.article-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.article-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.article-content {
+  padding: 1.5rem;
+}
+
+.article-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--vp-c-text-1);
+}
+
+.article-description {
+  font-size: 1rem;
+  color: var(--vp-c-text-2);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.article-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-3);
+}
+
+.article-author {
+  font-weight: 500;
+}
+
+.article-date {
+  opacity: 0.8;
+}
+
+/* 移除之前的内容样式 */
+.content :deep(h2),
+.content :deep(h2 + p) {
+  all: initial;
 }
 </style>
